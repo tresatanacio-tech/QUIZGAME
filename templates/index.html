@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>COM101 Interactive Quiz</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #f5f5f5;
+        }
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+        main {
+            width: min(100%, 760px);
+            padding: 32px;
+            border: 1px solid #333;
+            border-radius: 18px;
+            background: #1e1e1e;
+            box-shadow: 0 18px 50px #0008;
+        }
+        h1, h2 { margin-top: 0; }
+        h1 { color: #00e676; font-size: clamp(1.5rem, 5vw, 2.2rem); }
+        .subheading, .muted { color: #c5c5c5; }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 14px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background: #292929;
+            color: #ffd700;
+            font-weight: 700;
+        }
+        label { display: block; margin: 18px 0 8px; }
+        input, select, button, .choice {
+            width: 100%;
+            min-height: 46px;
+            padding: 12px 14px;
+            border: 1px solid #555;
+            border-radius: 8px;
+            font: inherit;
+        }
+        input, select { background: #121212; color: white; }
+        button, .choice {
+            cursor: pointer;
+            background: #263238;
+            color: white;
+            text-align: left;
+            transition: background .15s ease, transform .15s ease;
+        }
+        button:hover, .choice:hover { background: #37474f; transform: translateY(-1px); }
+        button.primary { margin-top: 18px; background: #2e7d32; text-align: center; }
+        button.primary:hover { background: #388e3c; }
+        .choices { display: grid; gap: 10px; margin-top: 18px; }
+        .feedback {
+            margin: 18px 0 0;
+            padding: 14px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        .feedback.correct { background: #123d2a; color: #9af0b5; }
+        .feedback.incorrect, .feedback.failed { background: #4a1f22; color: #ffaaaa; }
+        .feedback.info { background: #123348; color: #a7dcf7; }
+        details { margin-top: 24px; color: #ccc; line-height: 1.6; }
+        .summary { text-align: center; }
+        @media (max-width: 520px) {
+            main { padding: 22px 18px; }
+            .stats { display: grid; grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    {% if screen == "game" and question %}
+        <h1>COM101 Interactive Quiz</h1>
+        <p class="subheading">Good luck, {{ name }}!</p>
+        <div class="stats" aria-live="polite">
+            <span>Question {{ question_number }}/{{ question_count }}</span>
+            <span>Lives: {{ lives }} ❤️</span>
+            <span>Score: {{ score }} ⭐</span>
+            <span>Streak: {{ streak }} 🔥</span>
+        </div>
+        <p class="muted">{{ difficulty }} difficulty</p>
+        <h2>{{ question.question }}</h2>
+        {% if feedback_kind not in ["correct", "failed"] %}
+            <form class="choices" action="{{ url_for('submit_answer') }}" method="post">
+                {% for key, value in question.choices.items() %}
+                    <button class="choice" type="submit" name="choice" value="{{ key }}">
+                        [{{ key }}] {{ value }}
+                    </button>
+                {% endfor %}
+            </form>
+        {% endif %}
+        {% if feedback %}
+            <p class="feedback {{ feedback_kind }}" role="status">{{ feedback }}</p>
+        {% endif %}
+        {% if feedback_kind in ["correct", "failed"] %}
+            <form action="{{ url_for('next_question') }}" method="post">
+                <button class="primary" type="submit">Continue</button>
+            </form>
+        {% endif %}
+    {% elif screen == "summary" %}
+        <section class="summary">
+            <h1>Game Summary</h1>
+            <p>Player: <strong>{{ name }}</strong></p>
+            <p>Difficulty: <strong>{{ difficulty }}</strong></p>
+            <p>Final score: <strong>{{ score }} points</strong></p>
+            <h2>{{ rating }}</h2>
+            <form action="{{ url_for('restart_game') }}" method="post">
+                <button class="primary" type="submit">Play Again</button>
+            </form>
+        </section>
+    {% else %}
+        <h1>FEU Alabang<br>COM101 Interactive Quiz</h1>
+        <p class="subheading">Choose a difficulty and test what you know.</p>
+        <form action="{{ url_for('start_game') }}" method="post">
+            <label for="name">Your name</label>
+            <input id="name" name="name" maxlength="40" placeholder="Player" autocomplete="given-name">
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty" name="difficulty">
+                <option>Easy</option>
+                <option>Average</option>
+                <option>Hard</option>
+            </select>
+            <button class="primary" type="submit">Start Quiz</button>
+        </form>
+        <details>
+            <summary>How to play</summary>
+            <ul>
+                <li>Answer questions by choosing A, B, C, or D.</li>
+                <li>You have three attempts per question and start with two lives.</li>
+                <li>Correct answers from a streak of three onward earn double points.</li>
+                <li>Hard mode awards a bonus point for a correct first try.</li>
+            </ul>
+        </details>
+    {% endif %}
+</main>
+</body>
+</html>
