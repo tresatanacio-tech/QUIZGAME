@@ -115,7 +115,7 @@
             <h1>Game Summary</h1>
             <p>Player: <strong>{{ name }}</strong></p>
             <p>Difficulty: <strong>{{ difficulty }}</strong></p>
-            <p>Final score: <strong>{{ score }} points</strong></p>
+            <p>Final score: <strong>{{ score }}%</strong></p>
             <h2>{{ rating }}</h2>
             <form action="{{ url_for('restart_game') }}" method="post">
                 <button class="primary" type="submit">Play Again</button>
