@@ -37,7 +37,7 @@ def home():
         question=current_game_question() if session.get("screen") == "game" else None,
         question_number=session.get("question_index", 0) + 1,
         question_count=len(current_questions()),
-        score=session.get("score", 0),
+        score=session.get("final_score", session.get("score", 0)),
         streak=session.get("streak", 0),
         lives=session.get("lives", 0),
         attempts=session.get("attempts", 0),
@@ -133,8 +133,15 @@ def next_question():
 
     if session["question_index"] >= len(current_questions()) or session.get("lives", 0) <= 0:
         session["screen"] = "summary"
-        maximum_points = len(current_questions()) * DIFFICULTIES[session["difficulty"]]
-        percentage = (session.get("score", 0) / maximum_points * 100) if maximum_points else 0
+        
+        # Scale score to a 100-point maximum percentage
+        total_qs = len(current_questions())
+        maximum_points = total_qs * DIFFICULTIES[session["difficulty"]]
+        raw_score = session.get("score", 0)
+        
+        percentage = (raw_score / maximum_points * 100) if maximum_points else 0
+        session["final_score"] = round(percentage, 1)
+
         if percentage >= 100:
             session["rating"] = "Excellent (Perfect)"
         elif percentage >= 75:
@@ -151,7 +158,3 @@ def next_question():
 def restart_game():
     session.clear()
     return redirect(url_for("home"))
-
-
-if __name__ == "__main__":
-    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")
