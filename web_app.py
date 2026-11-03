@@ -134,12 +134,13 @@ def next_question():
     if session["question_index"] >= len(current_questions()) or session.get("lives", 0) <= 0:
         session["screen"] = "summary"
         
-        # Scale score to a 100-point maximum percentage
+        # Scale score to a 100-point maximum percentage and cap it at 100%
         total_qs = len(current_questions())
         maximum_points = total_qs * DIFFICULTIES[session["difficulty"]]
         raw_score = session.get("score", 0)
         
         percentage = (raw_score / maximum_points * 100) if maximum_points else 0
+        percentage = min(percentage, 100.0)  # Caps the maximum score at 100%
         session["final_score"] = round(percentage, 1)
 
         if percentage >= 100:
@@ -158,3 +159,7 @@ def next_question():
 def restart_game():
     session.clear()
     return redirect(url_for("home"))
+
+
+if __name__ == "__main__":
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")
