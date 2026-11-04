@@ -27,18 +27,15 @@ def current_game_question():
 def home():
     if session.get("screen") == "game":
         question = current_game_question()
-        # If we ran out of questions or lives, trigger summary and compute final score here safely!
         if question is None or session.get("lives", 0) <= 0:
             if session.get("screen") != "summary":
                 session["screen"] = "summary"
                 
-                # Calculate final percentage accurately based on raw score vs max possible raw score for ALL questions
+                # True percentage based strictly on correct answers vs total questions
                 total_qs = len(current_questions())
-                maximum_points = total_qs * DIFFICULTIES[session.get("difficulty", "Easy")]
-                raw_score = session.get("score", 0)
+                correct_count = session.get("correct_count", 0)
                 
-                percentage = (raw_score / maximum_points * 100) if maximum_points > 0 else 0
-                percentage = min(percentage, 100.0)
+                percentage = (correct_count / total_qs * 100) if total_qs > 0 else 0
                 session["final_score"] = round(percentage, 1)
 
                 if percentage >= 100:
@@ -82,7 +79,8 @@ def start_game():
         difficulty=difficulty,
         question_index=0,
         score=0,
-        lives=3,  # <--- Updated to 3 lives here!
+        correct_count=0,  # Track raw correct answers for accurate percentage
+        lives=3,
         streak=0,
         attempts=0,
         feedback=None,
@@ -105,16 +103,13 @@ def submit_answer():
     if selected == question["answer"]:
         streak = session.get("streak", 0) + 1
         points = DIFFICULTIES[session["difficulty"]]
-        streak_bonus = streak >= 3
-        if streak_bonus:
-            points *= 2
-
+        
         session["streak"] = streak
         session["score"] = session.get("score", 0) + points
+        session["correct_count"] = session.get("correct_count", 0) + 1  # Increment correct count
         session["feedback_kind"] = "correct"
         session["feedback"] = (
             f"Correct! +{points} point(s)."
-            + (" Streak bonus: points doubled!" if streak_bonus else "")
             + f" {question['explanation']}"
         )
     else:
@@ -148,11 +143,9 @@ def next_question():
         session["screen"] = "summary"
         
         total_qs = len(current_questions())
-        maximum_points = total_qs * DIFFICULTIES[session["difficulty"]]
-        raw_score = session.get("score", 0)
+        correct_count = session.get("correct_count", 0)
         
-        percentage = (raw_score / maximum_points * 100) if maximum_points else 0
-        percentage = min(percentage, 100.0)
+        percentage = (correct_count / total_qs * 100) if total_qs > 0 else 0
         session["final_score"] = round(percentage, 1)
 
         if percentage >= 100:
