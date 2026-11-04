@@ -76,7 +76,7 @@ def submit_answer():
         return redirect(url_for("home"))
 
     question = current_game_question()
-    if question is None or session.get("feedback_kind") in {"correct", "incorrect"}:
+    if question is None or session.get("feedback_kind") in {"correct", "failed"}:
         return redirect(url_for("home"))
 
     selected = request.form.get("choice")
@@ -97,11 +97,11 @@ def submit_answer():
             + f" {question['explanation']}"
         )
     else:
-        # Wrong answer: reset streak, lose 1 life instantly, and move on
+        # Wrong answer: reset streak, lose 1 life instantly, and set feedback to 'failed' so Continue button shows
         session["streak"] = 0
         lives = session.get("lives", 0) - 1
         session["lives"] = lives
-        session["feedback_kind"] = "incorrect"
+        session["feedback_kind"] = "failed"
         session["feedback"] = (
             f"Incorrect! The correct answer was [{question['answer']}]. "
             f"You lost 1 life. Lives left: {lives}. {question['explanation']}"
@@ -114,7 +114,7 @@ def submit_answer():
 def next_question():
     if session.get("screen") != "game":
         return redirect(url_for("home"))
-    if session.get("feedback_kind") not in {"correct", "incorrect"}:
+    if session.get("feedback_kind") not in {"correct", "failed"}:
         return redirect(url_for("home"))
 
     session["question_index"] = session.get("question_index", 0) + 1
