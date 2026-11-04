@@ -27,8 +27,29 @@ def current_game_question():
 def home():
     if session.get("screen") == "game":
         question = current_game_question()
+        # If we ran out of questions or lives, trigger summary and compute final score here safely!
         if question is None or session.get("lives", 0) <= 0:
-            session["screen"] = "summary"
+            if session.get("screen") != "summary":
+                session["screen"] = "summary"
+                
+                # Calculate final percentage accurately based on raw score vs max possible raw score for ALL questions
+                total_qs = len(current_questions())
+                maximum_points = total_qs * DIFFICULTIES[session.get("difficulty", "Easy")]
+                raw_score = session.get("score", 0)
+                
+                percentage = (raw_score / maximum_points * 100) if maximum_points > 0 else 0
+                percentage = min(percentage, 100.0)
+                session["final_score"] = round(percentage, 1)
+
+                if percentage >= 100:
+                    session["rating"] = "Excellent (Perfect)"
+                elif percentage >= 75:
+                    session["rating"] = "Very Good"
+                elif percentage >= 50:
+                    session["rating"] = "Good"
+                else:
+                    session["rating"] = "Needs Review"
+
     return render_template(
         "index.html",
         screen=session.get("screen", "menu"),
@@ -61,7 +82,7 @@ def start_game():
         difficulty=difficulty,
         question_index=0,
         score=0,
-        lives=2,
+        lives=3,  # <--- Updated to 3 lives here!
         streak=0,
         attempts=0,
         feedback=None,
@@ -97,7 +118,7 @@ def submit_answer():
             + f" {question['explanation']}"
         )
     else:
-        # Wrong answer: reset streak, lose 1 life instantly, and set feedback to 'failed' so Continue button shows
+        # Wrong answer: reset streak, lose 1 life instantly, set feedback to 'failed'
         session["streak"] = 0
         lives = session.get("lives", 0) - 1
         session["lives"] = lives
